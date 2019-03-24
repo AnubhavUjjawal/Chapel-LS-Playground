@@ -4,7 +4,10 @@ Heavily documented sample code for https://code.visualstudio.com/api/language-ex
 
 ## Functionality
 
-This Language Server works for plain text file. It has the following language features:
+This Language Server works for chapel file. It has the following language features:
+- Syntax Highlighting
+
+Work in progress
 - Completions
 - Diagnostics regenerated on each file change or configuration change
 
