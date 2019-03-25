@@ -1,0 +1,37 @@
+{
+	"proc": {
+		"prefix": "proc",
+		"body": "proc ${1:fname}(${2:}) {\n\t${3:}\n}",
+		"description": "New Function",
+		"scope": "source.chapel"
+	},
+	"spmd": {
+		"prefix": "coforall",
+		"body": [
+			"coforall ${1:loc} in ${2:Locales} do on ${1:loc} {",
+			"\tcoforall ${3:tid} in 1..here.maxTaskPar {",
+			"\t}",
+			"}"
+		],
+		"description": "one task per core per locale",
+		"scope": "source.chapel"
+	},
+	"spotl": {
+		"prefix": "coforall",
+		"body": [
+			"coforall ${1:loc} in ${2:Locales} do on ${1:loc} {",
+			"}"
+		],
+		"description": "spawn one task per locale",
+		"scope": "source.chapel"
+	},
+	"data-parll": {
+		"prefix": "forall",
+		"body": [
+			"forall ${1:a} in ${2:A} {",
+			"}"
+		],
+		"description": "Data Parallelism",
+		"scope": "source.chapel" 
+	}
+}
