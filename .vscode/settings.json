@@ -2,7 +2,5 @@
 	"editor.insertSpaces": false,
 	"tslint.enable": true,
 	"typescript.tsc.autoDetect": "off",
-	"typescript.preferences.quoteStyle": "single",
-	"languageserverexample.trace.server": "verbose"
-
+	"typescript.preferences.quoteStyle": "single"
 }

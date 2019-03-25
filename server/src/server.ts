@@ -17,6 +17,9 @@ import {
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	InitializeResult,
+	TextDocumentEdit,
+	TextDocumentItem,
+	TextEdit,
 } from 'vscode-languageserver';
 
 import { provideAutoCompletionResult } from './autocompletion';
@@ -25,9 +28,8 @@ import { provideAutoCompletionResult } from './autocompletion';
 // Also include all preview / proposed LSP features.
 let connection = createConnection(ProposedFeatures.all);
 
-// Create a simple text document manager. The text document manager
-// supports full document sync only
-let documents: TextDocuments = new TextDocuments();
+// A simple cache of TextDocuments with their uri as key
+let documents = new Map<String, TextDocument>();
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -49,7 +51,8 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 		capabilities: {
 			textDocumentSync: {
 				openClose: true,
-				change: TextDocumentSyncKind.Incremental
+				// :TODO: Incremental documentChanges 
+				change: TextDocumentSyncKind.Full
 			},
 			// Tell the client that the server supports code completion
 			completionProvider: {
@@ -110,17 +113,17 @@ function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
 	if (!result) {
 		result = connection.workspace.getConfiguration({
 			scopeUri: resource,
-			section: 'languageServerExample'
+			section: 'chapel'
 		});
 		documentSettings.set(resource, result);
 	}
 	return result;
 }
 
-// Only keep settings for open documents
-documents.onDidClose(e => {
-	documentSettings.delete(e.document.uri);
-});
+// // Only keep settings for open documents
+// documents.onDidClose(e => {
+// 	documentSettings.delete(e.document.uri);
+// });
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
@@ -186,7 +189,7 @@ connection.onCompletion(
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-		connection.console.log("at line number " + JSON.stringify(_textDocumentPosition));
+		// connection.console.log("at line number " + JSON.stringify(_textDocumentPosition));
 		return provideAutoCompletionResult(_textDocumentPosition);
 	}	
 );
@@ -204,16 +207,27 @@ connection.onDidOpenTextDocument((params) => {
 	// params.uri uniquely identifies the document. For documents store on disk this is a file URI.
 	// params.text the initial full content of the document.
 	connection.console.log(`${params.textDocument.uri} opened.`);
+	let newDoc =  TextDocument.create(params.textDocument.uri,
+		params.textDocument.languageId,
+		params.textDocument.version,
+		params.textDocument.text);
+	documents.set(newDoc.uri, newDoc);
 });
 connection.onDidChangeTextDocument((params) => {
 	// The content of a text document did change in VSCode.
 	// params.uri uniquely identifies the document.
 	// params.contentChanges describe the content changes to the document.
-	connection.console.log(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
+	let oldDoc = documents.get(params.textDocument.uri);
+	documents.set(params.textDocument.uri, TextDocument.create(params.textDocument.uri,
+												oldDoc.languageId,
+												params.textDocument.version,
+												params.contentChanges.slice(-1).pop().text));
+	connection.console.log(`${params.textDocument.uri} changed to: ${JSON.stringify(params.contentChanges)}`);
 });
 connection.onDidCloseTextDocument((params) => {
 	// A text document got closed in VSCode.
 	// params.uri uniquely identifies the document.
+	documents.delete(params.textDocument.uri);
 	connection.console.log(`${params.textDocument.uri} closed.`);
 });
 

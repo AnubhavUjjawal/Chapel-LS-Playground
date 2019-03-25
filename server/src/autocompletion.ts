@@ -16,7 +16,6 @@ export function provideAutoCompletionResult(_textDocumentPosition: TextDocumentP
 	// 'type', 'reduce', 'union', 'ref', 'use', 'require', 'var', 'return', 'when', 
 	// 'scan', 'where', 'select', 'while', 'serial', 'with', 'single', 'yield', 'sparse', 
 	// 'zip']
-	console.log("in auto completion provider");
 	return [
 		{
 			label: "align",
