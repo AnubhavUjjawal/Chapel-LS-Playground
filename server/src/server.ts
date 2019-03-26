@@ -259,7 +259,7 @@ connection.onHover(
 		let typeResolves = fs.readFileSync(__dirname + "/log/text_13resolve.ast").toString();
 		// // connection.console.log(typeResolves);
 		let regexp = new RegExp(`${tobeFoundVar}\\[\\d+\\]:\\w+\\(\\d+\\)`);
-		var hover = {contents: regexp.exec(typeResolves)};
+		var hover = {contents: regexp.exec(typeResolves)[0].split(":")[1]};
 		return hover;
 	}
 );
