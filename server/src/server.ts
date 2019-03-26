@@ -20,9 +20,15 @@ import {
 	TextDocumentEdit,
 	TextDocumentItem,
 	TextEdit,
+	Hover,
+	CompletionParams,
+	HoverRequest,
+	MarkedString,
 } from 'vscode-languageserver';
-
+import * as fs from 'fs';
 import { provideAutoCompletionResult } from './autocompletion';
+import { execSync } from 'child_process';
+import { HandlerResult } from 'vscode-jsonrpc';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -30,6 +36,9 @@ let connection = createConnection(ProposedFeatures.all);
 
 // A simple cache of TextDocuments with their uri as key
 let documents = new Map<String, TextDocument>();
+
+// Might convert the value to an enum
+let variableTypes = new Map<String, String>();
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -57,7 +66,9 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 			// Tell the client that the server supports code completion
 			completionProvider: {
 				resolveProvider: true
-			}
+			},
+			// Tell the client the server supports hover
+			hoverProvider: true
 		}
 	};
 });
@@ -230,6 +241,28 @@ connection.onDidCloseTextDocument((params) => {
 	documents.delete(params.textDocument.uri);
 	connection.console.log(`${params.textDocument.uri} closed.`);
 });
+
+connection.onHover(
+	// Testing hover
+	(_textDocumentPosition:TextDocumentPositionParams): Hover  => {
+		let doc = documents.get(_textDocumentPosition.textDocument.uri);
+		
+		// need to extract variable from `_textDocumentPosition` to `tobeFoundVar`
+		let tobeFoundVar = "s";
+		// TODO: throttle this to every 5 seconds
+		// Write new code to file, compile and produce logs.
+		fs.writeFileSync(__dirname + `/text.chpl`, doc.getText());
+		connection.console.log("The file was saved for evaluation!");
+		// remove any previous log files and create new logs
+		execSync("rm -rf log && chpl text.chpl --log-pass r --stop-after-pass resolve", {cwd: __dirname})
+		
+		let typeResolves = fs.readFileSync(__dirname + "/log/text_13resolve.ast").toString();
+		// // connection.console.log(typeResolves);
+		let regexp = new RegExp(`${tobeFoundVar}\\[\\d+\\]:\\w+\\(\\d+\\)`);
+		var hover = {contents: regexp.exec(typeResolves)};
+		return hover;
+	}
+);
 
 // documents.onDidChangeContent((event) => {
 // 	connection.console.log(`[Server(${process.pid})] Document content changed: ${event.document.uri}`);
